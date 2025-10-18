@@ -96,6 +96,12 @@ dolibarr-mcp-server/
 
 Les contributions sont les bienvenues! N'hésitez pas à ouvrir des issues ou des pull requests.
 
+## Remerciements
+
+Ce serveur MCP a été construit en utilisant le guide et le template de [theNetworkChuck's Docker MCP Tutorial](https://github.com/theNetworkChuck/docker-mcp-tutorial/blob/main/README.md).
+
+Un grand merci à **NetworkChuck** pour avoir créé un excellent tutoriel et un template qui ont rendu possible la construction de ce serveur MCP !
+
 ## Licence
 
 [À définir]
