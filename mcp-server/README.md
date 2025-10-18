@@ -10,12 +10,12 @@ This MCP server provides a secure interface for AI assistants to interact with D
 
 ### Current Implementation
 
-- **`get_project`** - Retrieve detailed information about a specific project by ID
-- **`list_projects`** - List all projects with pagination and sorting options
-- **`create_project`** - Create a new project with reference, title, and optional details
-- **`update_project`** - Update project information (title, description, budget)
-- **`delete_project`** - Delete a project by ID
-- **`get_project_tasks`** - Retrieve all tasks associated with a project
+- **`dolibarr_get_project`** - Retrieve detailed information about a specific project by ID
+- **`dolibarr_list_projects`** - List all projects with pagination and sorting options
+- **`dolibarr_create_project`** - Create a new project with reference, title, and optional details
+- **`dolibarr_update_project`** - Update project information (title, description, budget)
+- **`dolibarr_delete_project`** - Delete a project by ID
+- **`dolibarr_get_project_tasks`** - Retrieve all tasks associated with a project
 
 ## Prerequisites
 
@@ -53,7 +53,7 @@ docker mcp secret set DOLIBARR_URL="https://your-dolibarr-instance.com"
 docker mcp secret set DOLIBARR_API_KEY="your_api_key_here"
 
 # Verify secrets are set
-docker mcp secret list
+docker mcp secret ls
 ```
 
 ### Step 4: Create Custom Catalog
@@ -62,8 +62,8 @@ docker mcp secret list
 # Create catalogs directory if it doesn't exist
 mkdir -p ~/.docker/mcp/catalogs
 
-# Create or edit custom.yaml
-nano ~/.docker/mcp/catalogs/custom.yaml
+# Create or edit dolibarr-custom.yaml
+vim ~/.docker/mcp/catalogs/dolibarr-custom.yaml
 ```
 
 Add this entry to custom.yaml:
@@ -86,12 +86,12 @@ registry:
     upstream: ""
     icon: ""
     tools:
-      - name: get_project
-      - name: list_projects
-      - name: create_project
-      - name: update_project
-      - name: delete_project
-      - name: get_project_tasks
+      - name: dolibarr_get_project
+      - name: dolibarr_list_projects
+      - name: dolibarr_create_project
+      - name: dolibarr_update_project
+      - name: dolibarr_delete_project
+      - name: dolibarr_get_project_tasks
     secrets:
       - name: DOLIBARR_URL
         env: DOLIBARR_URL
@@ -107,14 +107,14 @@ registry:
         - erp
         - crm
       license: MIT
-      owner: local
+      owner: teddy.morel@mona.re
 ```
 
 ### Step 5: Update Registry
 
 ```bash
 # Edit registry file
-nano ~/.docker/mcp/registry.yaml
+vim ~/.docker/mcp/registry.yaml
 ```
 
 Add this entry under the existing `registry:` key:

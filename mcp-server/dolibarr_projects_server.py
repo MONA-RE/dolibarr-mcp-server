@@ -64,7 +64,7 @@ def format_project_info(project):
 # === MCP TOOLS ===
 
 @mcp.tool()
-async def get_project(project_id: str = "") -> str:
+async def dolibarr_get_project(project_id: str = "") -> str:
     """Get details of a specific Dolibarr project by ID."""
     logger.info(f"Fetching project with ID: {project_id}")
 
@@ -95,7 +95,7 @@ async def get_project(project_id: str = "") -> str:
         return f"❌ Error: {str(e)}"
 
 @mcp.tool()
-async def list_projects(limit: str = "100", page: str = "0", sortfield: str = "t.rowid", sortorder: str = "ASC") -> str:
+async def dolibarr_list_projects(limit: str = "100", page: str = "0", sortfield: str = "t.rowid", sortorder: str = "ASC") -> str:
     """List Dolibarr projects with optional pagination and sorting."""
     logger.info(f"Listing projects: limit={limit}, page={page}")
 
@@ -142,7 +142,7 @@ async def list_projects(limit: str = "100", page: str = "0", sortfield: str = "t
         return f"❌ Error: {str(e)}"
 
 @mcp.tool()
-async def create_project(ref: str = "", title: str = "", description: str = "", fk_soc: str = "", budget_amount: str = "") -> str:
+async def dolibarr_create_project(ref: str = "", title: str = "", description: str = "", fk_soc: str = "", budget_amount: str = "") -> str:
     """Create a new Dolibarr project with required ref and title."""
     logger.info(f"Creating project: {ref} - {title}")
 
@@ -196,7 +196,7 @@ async def create_project(ref: str = "", title: str = "", description: str = "", 
         return f"❌ Error: {str(e)}"
 
 @mcp.tool()
-async def update_project(project_id: str = "", title: str = "", description: str = "", budget_amount: str = "") -> str:
+async def dolibarr_update_project(project_id: str = "", title: str = "", description: str = "", budget_amount: str = "") -> str:
     """Update an existing Dolibarr project by ID."""
     logger.info(f"Updating project: {project_id}")
 
@@ -244,7 +244,7 @@ async def update_project(project_id: str = "", title: str = "", description: str
         return f"❌ Error: {str(e)}"
 
 @mcp.tool()
-async def delete_project(project_id: str = "") -> str:
+async def dolibarr_delete_project(project_id: str = "") -> str:
     """Delete a Dolibarr project by ID."""
     logger.info(f"Deleting project: {project_id}")
 
@@ -275,7 +275,7 @@ async def delete_project(project_id: str = "") -> str:
         return f"❌ Error: {str(e)}"
 
 @mcp.tool()
-async def get_project_tasks(project_id: str = "", includetimespent: str = "0") -> str:
+async def dolibarr_get_project_tasks(project_id: str = "", includetimespent: str = "0") -> str:
     """Get all tasks for a specific Dolibarr project."""
     logger.info(f"Fetching tasks for project: {project_id}")
 

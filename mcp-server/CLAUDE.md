@@ -179,10 +179,10 @@ Located at `~/.docker/mcp/registry.yaml`
 ## Future Enhancements
 
 Potential additional tools:
-- validate_project (POST /projects/{id}/validate)
-- get_project_roles (GET /projects/{id}/roles)
-- filter_projects_by_category (using category parameter)
-- filter_projects_by_thirdparty (using thirdparty_ids parameter)
-- advanced_filter_projects (using sqlfilters parameter)
+- dolibarr_validate_project (POST /projects/{id}/validate)
+- dolibarr_get_project_roles (GET /projects/{id}/roles)
+- dolibarr_filter_projects_by_category (using category parameter)
+- dolibarr_filter_projects_by_thirdparty (using thirdparty_ids parameter)
+- dolibarr_advanced_filter_projects (using sqlfilters parameter)
 
 When adding these, follow the same patterns and constraints as existing tools.
