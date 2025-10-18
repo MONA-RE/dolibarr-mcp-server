@@ -255,6 +255,12 @@ echo '{"jsonrpc":"2.0","method":"tools/list","id":1}' | python dolibarr_projects
 - Sensitive data is never logged
 - All API communication uses HTTPS (recommended)
 
+## Acknowledgments
+
+This MCP server was built using the guide and template from [theNetworkChuck's Docker MCP Tutorial](https://github.com/theNetworkChuck/docker-mcp-tutorial/blob/main/README.md).
+
+Special thanks to **NetworkChuck** for creating an excellent tutorial and template that made building this MCP server possible!
+
 ## License
 
 MIT License
