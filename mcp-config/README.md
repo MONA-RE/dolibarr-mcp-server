@@ -1,6 +1,6 @@
 # Configuration MCP pour Dolibarr
 
-Ce dossier contient les fichiers de configuration nécessaires pour utiliser les serveurs MCP Dolibarr avec Claude Desktop.
+Ce dossier contient les fichiers de configuration nécessaires pour utiliser les serveurs MCP Dolibarr avec Claude code.
 
 ## Fichiers inclus
 
@@ -40,8 +40,7 @@ chmod +x install.sh
 Le script va :
 1. Créer des backups de vos fichiers existants
 2. Copier les configurations dans `~/.docker/mcp/catalogs/` et `~/.docker/mcp/`
-3. Vérifier que Claude Desktop est configuré
-4. Vous demander de configurer les secrets
+3.  Vous demander de configurer les secrets
 
 ### Méthode 2 : Installation manuelle
 
@@ -52,51 +51,16 @@ Le script va :
 mkdir -p ~/.docker/mcp/catalogs
 
 # Sauvegarder vos fichiers existants (optionnel)
-cp ~/.docker/mcp/catalogs/custom.yaml ~/.docker/mcp/catalogs/custom.yaml.backup
+cp ~/.docker/mcp/catalogs/dolibarr-mcp-servers.yaml ~/.docker/mcp/catalogs/dolibarr-mcp-servers.yaml.backup
 cp ~/.docker/mcp/registry.yaml ~/.docker/mcp/registry.yaml.backup
 
 # Copier les nouveaux fichiers
-cp custom.yaml ~/.docker/mcp/catalogs/custom.yaml
+cp dolibarr-mcp-servers.yaml ~/.docker/mcp/catalogs/dolibarr-mcp-servers.yaml
 cp registry.yaml ~/.docker/mcp/registry.yaml
 ```
+#### Étape 2 : fichier de configuration  pour claude code dans ce projet : 
 
-#### Étape 2 : Configurer Claude Desktop
-
-Éditez le fichier de configuration de Claude Desktop :
-- **Linux** : `~/.config/Claude/claude_desktop_config.json`
-- **macOS** : `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Windows** : `%APPDATA%\Claude\claude_desktop_config.json`
-
-Assurez-vous que votre configuration inclut le catalogue custom :
-
-```json
-{
-  "mcpServers": {
-    "mcp-toolkit-gateway": {
-      "command": "docker",
-      "args": [
-        "run",
-        "-i",
-        "--rm",
-        "-v", "/var/run/docker.sock:/var/run/docker.sock",
-        "-v", "[YOUR_HOME]/.docker/mcp:/mcp",
-        "docker/mcp-gateway",
-        "--catalog=/mcp/catalogs/docker-mcp.yaml",
-        "--catalog=/mcp/catalogs/custom.yaml",
-        "--config=/mcp/config.yaml",
-        "--registry=/mcp/registry.yaml",
-        "--tools-config=/mcp/tools.yaml",
-        "--transport=stdio"
-      ]
-    }
-  }
-}
-```
-
-**Important** : Remplacez `[YOUR_HOME]` par :
-- Linux : `/home/votre_nom_utilisateur`
-- macOS : `/Users/votre_nom_utilisateur`
-- Windows : `C:\\Users\\votre_nom_utilisateur` (doubles backslashes)
+lancez claude-code à la racine de ce projet. Ce dernier liera le ficheir .mcp.json pour trouver les serveurs mcp disponibles dans ce projet.
 
 #### Étape 3 : Construire les images Docker
 
@@ -104,7 +68,7 @@ Assurez-vous que votre configuration inclut le catalogue custom :
 # Depuis la racine du projet
 
 # Construire l'image Projects
-cd mcp-server
+cd mcp-server-projects
 docker build -t dolibarr-projects-mcp-server:latest .
 
 # Construire l'image Tasks
@@ -131,15 +95,42 @@ docker mcp secret ls
 3. Onglet "API/Webhooks"
 4. Générez une nouvelle clé API si nécessaire
 
-#### Étape 5 : Redémarrer Claude Desktop
+#### Étape 5 : Importer le catalogue et activer les serveurs
 
-1. Quittez complètement Claude Desktop
-2. Redémarrez Claude Desktop
-3. Les outils Dolibarr devraient maintenant être disponibles !
+**IMPORTANT** : Cette étape est cruciale ! Sans elle, les outils ne seront pas disponibles.
+
+```bash
+# Importer le catalogue Dolibarr MCP
+docker mcp catalog import ~/.docker/mcp/catalogs/dolibarr-mcp-servers.yaml
+
+# Vérifier que le catalogue est bien importé
+docker mcp catalog ls
+
+# Activer les serveurs
+docker mcp server enable dolibarr_projects
+docker mcp server enable dolibarr_tasks
+
+# Vérifier que les serveurs sont actifs
+docker mcp server list
+```
+
+#### Étape 6 : Redémarrer Claude Code
+
+1. Quittez complètement Claude Code
+2. Redémarrez Claude Code
+3. Les 10 outils Dolibarr devraient maintenant être disponibles !
 
 ## Vérification
 
-### Vérifier que les serveurs sont enregistrés
+### 1. Vérifier que le catalogue est importé
+
+```bash
+docker mcp catalog ls
+```
+
+Vous devriez voir `dolibarr-mcp-servers: DolibarrMCP Servers` dans la liste.
+
+### 2. Vérifier que les serveurs sont actifs
 
 ```bash
 docker mcp server list
@@ -147,7 +138,17 @@ docker mcp server list
 
 Vous devriez voir `dolibarr_projects` et `dolibarr_tasks` dans la liste.
 
-### Vérifier les secrets
+### 3. Vérifier que les outils sont disponibles
+
+```bash
+docker mcp tools list
+```
+
+Vous devriez voir **10 outils Dolibarr** :
+- 6 outils `dolibarr_*_project*` (Projects)
+- 4 outils `dolibarr_*_task*` (Tasks)
+
+### 4. Vérifier les secrets
 
 ```bash
 docker mcp secret ls
@@ -155,25 +156,20 @@ docker mcp secret ls
 
 Vous devriez voir `DOLIBARR_URL` et `DOLIBARR_API_KEY`.
 
-### Tester les serveurs
+### 5. Tester les serveurs
 
 ```bash
-# Tester le serveur Projects
-docker run -i --rm \
-  -e DOLIBARR_URL="$DOLIBARR_URL" \
-  -e DOLIBARR_API_KEY="$DOLIBARR_API_KEY" \
-  dolibarr-projects-mcp-server:latest \
-  <<< '{"jsonrpc":"2.0","method":"tools/list","id":1}'
+# Tester la liste des projets
+docker mcp tools call dolibarr_projects dolibarr_list_projects
 
-# Tester le serveur Tasks
-docker run -i --rm \
-  -e DOLIBARR_URL="$DOLIBARR_URL" \
-  -e DOLIBARR_API_KEY="$DOLIBARR_API_KEY" \
-  dolibarr-tasks-mcp-server:latest \
-  <<< '{"jsonrpc":"2.0","method":"tools/list","id":1}'
+# Tester la récupération d'un projet spécifique (remplacez 1 par un ID réel)
+docker mcp tools call dolibarr_projects dolibarr_get_project '{"project_id": 1}'
+
+# Tester la récupération d'une tâche (remplacez 1 par un ID réel)
+docker mcp tools call dolibarr_tasks dolibarr_get_task '{"task_id": 1, "includetimespent": 0}'
 ```
 
-## Utilisation dans Claude Desktop
+## Utilisation dans Claude code
 
 Une fois configuré, vous pouvez interagir avec Dolibarr en langage naturel :
 
@@ -193,22 +189,52 @@ Une fois configuré, vous pouvez interagir avec Dolibarr en langage naturel :
 
 ## Dépannage
 
-### Les outils n'apparaissent pas
+### Les outils n'apparaissent pas dans `docker mcp tools list`
+
+**Symptôme** : Les serveurs apparaissent dans `docker mcp server list` mais les outils ne sont pas visibles.
+
+**Solution** : Le catalogue n'est pas importé ou les serveurs ne sont pas activés.
+
+```bash
+# 1. Vérifier que le catalogue est importé
+docker mcp catalog ls
+
+# Si le catalogue n'apparaît pas, l'importer
+docker mcp catalog import ~/.docker/mcp/catalogs/dolibarr-mcp-servers.yaml
+
+# 2. Activer les serveurs
+docker mcp server enable dolibarr_projects
+docker mcp server enable dolibarr_tasks
+
+# 3. Vérifier que les outils sont maintenant disponibles
+docker mcp tools list
+```
+
+### Les images Docker ne sont pas trouvées
 
 1. Vérifiez que les images Docker sont construites :
    ```bash
    docker images | grep dolibarr
    ```
 
-2. Vérifiez que les fichiers de configuration sont corrects :
+2. Si les images n'existent pas, construisez-les :
    ```bash
-   cat ~/.docker/mcp/catalogs/custom.yaml
-   cat ~/.docker/mcp/registry.yaml
+   cd /chemin/vers/dolibarr-mcp-server/mcp-server-projects
+   docker build -t dolibarr-projects-mcp-server:latest .
+
+   cd ../mcp-server-tasks
+   docker build -t dolibarr-tasks-mcp-server:latest .
    ```
 
-3. Vérifiez les logs Claude Desktop
+### Problèmes de configuration
 
-4. Redémarrez complètement Claude Desktop
+1. Vérifiez que les fichiers de configuration sont corrects :
+   ```bash
+   cat ~/.docker/mcp/catalogs/dolibarr-mcp-servers.yaml
+   docker mcp catalog show dolibarr-mcp-servers
+   ```
+
+2. Redémarrez complètement Claude Code
 
 ### Erreurs d'authentification
 
@@ -235,11 +261,11 @@ Assurez-vous que votre utilisateur Dolibarr a les permissions nécessaires :
 ```
 dolibarr-mcp-server/
 ├── mcp-config/              # Configuration MCP (ce dossier)
-│   ├── custom.yaml          # Catalogue des serveurs
+│   ├── dolibarr-mcp-servers.yaml          # Catalogue des serveurs
 │   ├── registry.yaml        # Registre MCP
 │   ├── install.sh           # Script d'installation
 │   └── README.md            # Ce fichier
-├── mcp-server/              # Serveur MCP Projects
+├── mcp-server-projects/              # Serveur MCP Projects
 │   ├── Dockerfile
 │   ├── dolibarr_projects_server.py
 │   └── README.md
@@ -262,7 +288,7 @@ Pour ajouter de nouveaux serveurs MCP :
 
 1. Créez un nouveau dossier `mcp-server-[nom]/`
 2. Implémentez votre serveur en suivant les patterns existants
-3. Ajoutez une entrée dans `mcp-config/custom.yaml`
+3. Ajoutez une entrée dans `mcp-config/dolibarr-mcp-servers.yaml`
 4. Ajoutez une entrée dans `mcp-config/registry.yaml`
 5. Mettez à jour ce README
 
