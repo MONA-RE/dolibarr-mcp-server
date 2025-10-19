@@ -65,32 +65,98 @@ Le serveur MCP nécessite les paramètres suivants:
 
 ## Utilisation
 
-Une fois le serveur MCP démarré, il expose les ressources et outils Dolibarr via le protocole MCP, permettant aux clients MCP (comme Claude Desktop, IDE avec support MCP, etc.) d'interagir avec Dolibarr.
+### Avec Claude Code
+
+Le projet inclut un fichier `.mcp.json` pour une utilisation directe dans Claude Code :
+
+```bash
+# 1. Construire les images Docker
+cd mcp-server && docker build -t dolibarr-projects-mcp-server:latest .
+cd ../mcp-server-tasks && docker build -t dolibarr-tasks-mcp-server:latest .
+
+# 2. Configurer les variables d'environnement
+cp .env.example .env
+# Éditer .env avec vos valeurs
+
+# 3. Ouvrir le projet dans Claude Code
+# Les serveurs MCP seront automatiquement disponibles
+```
+
+Consultez [CLAUDE_CODE.md](./CLAUDE_CODE.md) pour plus de détails.
+
+### Avec Claude Desktop
+
+Le projet inclut une configuration complète pour Claude Desktop :
+
+```bash
+# Utiliser le script d'installation
+cd mcp-config
+./install.sh
+```
+
+Consultez [mcp-config/README.md](./mcp-config/README.md) pour plus de détails.
 
 ## Structure du projet
 
 ```
 dolibarr-mcp-server/
+├── .mcp.json                      # Configuration MCP pour Claude Code
+├── .env.example                   # Exemple de variables d'environnement
 ├── README.md                      # Ce fichier
+├── CLAUDE_CODE.md                 # Guide d'utilisation avec Claude Code
 ├── Dolibarr_api_documentation/    # Documentation des API Dolibarr
-│   ├── README.md                  # Vue d'ensemble de l'API
-│   └── projects.md                # Documentation API Projects
-├── prompt/                        # Prompts et instructions
-│   └── prompt-api-documentation.md
-└── src/                          # Code source (à venir)
+│   ├── README.md
+│   ├── projects.md                # API Projects
+│   ├── tasks.md                   # API Tasks
+│   ├── thirdparties.md           # API Tiers
+│   ├── contacts.md               # API Contacts
+│   ├── invoices.md               # API Factures
+│   └── products.md               # API Produits
+├── mcp-server/                    # Serveur MCP Projects
+│   ├── Dockerfile
+│   ├── dolibarr_projects_server.py
+│   ├── requirements.txt
+│   ├── README.md
+│   └── CLAUDE.md
+├── mcp-server-tasks/              # Serveur MCP Tasks
+│   ├── Dockerfile
+│   ├── dolibarr_tasks_server.py
+│   ├── requirements.txt
+│   ├── README.md
+│   └── CLAUDE.md
+├── mcp-config/                    # Configuration pour Claude Desktop
+│   ├── custom.yaml               # Catalogue MCP
+│   ├── registry.yaml             # Registre MCP
+│   ├── install.sh                # Script d'installation
+│   └── README.md
+└── prompt/                        # Prompts et instructions
+    ├── prompt-api-documentation.md
+    └── mcp-builder-prompt-mcp-dolibarr-task.md
 ```
 
 ## Roadmap
 
-- [ ] Implémentation du serveur MCP de base
-- [ ] Support de l'API Projects
-- [ ] Support de l'API Tasks
-- [ ] Support de l'API Thirdparties
-- [ ] Support de l'API Contacts
-- [ ] Support de l'API Invoices
-- [ ] Support de l'API Products/Services
-- [ ] Documentation complète d'utilisation
-- [ ] Tests d'intégration
+- [x] Implémentation du serveur MCP de base
+- [x] Support de l'API Projects (6 outils)
+- [x] Support de l'API Tasks (4 outils)
+- [x] Documentation complète des API Dolibarr
+  - [x] Projects API
+  - [x] Tasks API
+  - [x] Thirdparties API
+  - [x] Contacts API
+  - [x] Invoices API
+  - [x] Products/Services API
+- [x] Documentation complète d'utilisation
+  - [x] Guide Claude Code
+  - [x] Guide Claude Desktop
+  - [x] Scripts d'installation
+- [x] Configuration partageable pour contributeurs
+- [ ] Support de l'API Thirdparties (serveur MCP)
+- [ ] Support de l'API Contacts (serveur MCP)
+- [ ] Support de l'API Invoices (serveur MCP)
+- [ ] Support de l'API Products/Services (serveur MCP)
+- [ ] Tests d'intégration automatisés
+- [ ] CI/CD avec GitHub Actions
 
 ## Contribuer
 
@@ -104,7 +170,9 @@ Un grand merci à **NetworkChuck** pour avoir créé un excellent tutoriel et un
 
 ## Licence
 
-[À définir]
+MIT License - Voir le fichier LICENSE pour plus de détails.
+
+Ce projet est open source et permet une utilisation commerciale et propriétaire.
 
 ## Références
 

@@ -1,2 +1,36 @@
-# Prompt files - internal development only
+# Variables d'environnement
+.env
+
+# Fichiers de backup
+*.backup
+*.backup-*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Docker
+.dockerignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Prompts de développement
 prompt/
