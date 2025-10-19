@@ -160,13 +160,19 @@ Vous devriez voir `DOLIBARR_URL` et `DOLIBARR_API_KEY`.
 
 ```bash
 # Tester la liste des projets
-docker mcp tools call dolibarr_projects dolibarr_list_projects
+docker mcp tools call dolibarr_list_projects
 
 # Tester la récupération d'un projet spécifique (remplacez 1 par un ID réel)
-docker mcp tools call dolibarr_projects dolibarr_get_project '{"project_id": 1}'
+docker mcp tools call dolibarr_get_project project_id=1
 
 # Tester la récupération d'une tâche (remplacez 1 par un ID réel)
-docker mcp tools call dolibarr_tasks dolibarr_get_task '{"task_id": 1, "includetimespent": 0}'
+docker mcp tools call dolibarr_get_task task_id=1 includetimespent=0
+
+# Créer un nouveau projet
+docker mcp tools call dolibarr_create_project ref=TEST001 title="Mon projet test"
+
+# Ajouter du temps passé à une tâche
+docker mcp tools call dolibarr_task_add_spenttime task_id=1 date=2025-01-19 duration=2.5 note="Développement API"
 ```
 
 ## Utilisation dans Claude code

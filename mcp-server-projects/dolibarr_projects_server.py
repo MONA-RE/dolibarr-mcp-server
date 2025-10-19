@@ -64,12 +64,12 @@ def format_project_info(project):
 # === MCP TOOLS ===
 
 @mcp.tool()
-async def dolibarr_get_project(project_id: str = "") -> str:
+async def dolibarr_get_project(project_id: int) -> str:
     """Get details of a specific Dolibarr project by ID."""
     logger.info(f"Fetching project with ID: {project_id}")
 
-    if not project_id.strip():
-        return "❌ Error: project_id is required"
+    if not project_id or project_id <= 0:
+        return "❌ Error: project_id is required and must be a positive integer"
 
     if not DOLIBARR_URL or not DOLIBARR_API_KEY:
         return "❌ Error: DOLIBARR_URL and DOLIBARR_API_KEY must be configured"
@@ -196,12 +196,12 @@ async def dolibarr_create_project(ref: str = "", title: str = "", description: s
         return f"❌ Error: {str(e)}"
 
 @mcp.tool()
-async def dolibarr_update_project(project_id: str = "", title: str = "", description: str = "", budget_amount: str = "") -> str:
+async def dolibarr_update_project(project_id: int, title: str = "", description: str = "", budget_amount: str = "") -> str:
     """Update an existing Dolibarr project by ID."""
     logger.info(f"Updating project: {project_id}")
 
-    if not project_id.strip():
-        return "❌ Error: project_id is required"
+    if not project_id or project_id <= 0:
+        return "❌ Error: project_id is required and must be a positive integer"
 
     if not DOLIBARR_URL or not DOLIBARR_API_KEY:
         return "❌ Error: DOLIBARR_URL and DOLIBARR_API_KEY must be configured"
@@ -244,12 +244,12 @@ async def dolibarr_update_project(project_id: str = "", title: str = "", descrip
         return f"❌ Error: {str(e)}"
 
 @mcp.tool()
-async def dolibarr_delete_project(project_id: str = "") -> str:
+async def dolibarr_delete_project(project_id: int) -> str:
     """Delete a Dolibarr project by ID."""
     logger.info(f"Deleting project: {project_id}")
 
-    if not project_id.strip():
-        return "❌ Error: project_id is required"
+    if not project_id or project_id <= 0:
+        return "❌ Error: project_id is required and must be a positive integer"
 
     if not DOLIBARR_URL or not DOLIBARR_API_KEY:
         return "❌ Error: DOLIBARR_URL and DOLIBARR_API_KEY must be configured"
@@ -275,12 +275,12 @@ async def dolibarr_delete_project(project_id: str = "") -> str:
         return f"❌ Error: {str(e)}"
 
 @mcp.tool()
-async def dolibarr_get_project_tasks(project_id: str = "", includetimespent: str = "0") -> str:
+async def dolibarr_get_project_tasks(project_id: int, includetimespent: int = 0) -> str:
     """Get all tasks for a specific Dolibarr project."""
     logger.info(f"Fetching tasks for project: {project_id}")
 
-    if not project_id.strip():
-        return "❌ Error: project_id is required"
+    if not project_id or project_id <= 0:
+        return "❌ Error: project_id is required and must be a positive integer"
 
     if not DOLIBARR_URL or not DOLIBARR_API_KEY:
         return "❌ Error: DOLIBARR_URL and DOLIBARR_API_KEY must be configured"

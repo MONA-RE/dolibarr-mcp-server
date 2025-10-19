@@ -69,25 +69,23 @@ def format_task_info(task):
 # === MCP TOOLS ===
 
 @mcp.tool()
-async def dolibarr_get_task(task_id: str = "", includetimespent: str = "0") -> str:
+async def dolibarr_get_task(task_id: int, includetimespent: int = 0) -> str:
     """Get details of a specific Dolibarr task by ID with optional time spent data."""
     logger.info(f"Fetching task with ID: {task_id}")
 
-    if not task_id.strip():
-        return "❌ Error: task_id is required"
+    if not task_id or task_id <= 0:
+        return "❌ Error: task_id is required and must be a positive integer"
 
     if not DOLIBARR_URL or not DOLIBARR_API_KEY:
         return "❌ Error: DOLIBARR_URL and DOLIBARR_API_KEY must be configured"
 
     try:
-        timespent_int = int(includetimespent) if includetimespent.strip() else 0
-
-        if timespent_int not in [0, 1, 2]:
+        if includetimespent not in [0, 1, 2]:
             return "❌ Error: includetimespent must be 0, 1, or 2"
 
         async with httpx.AsyncClient() as client:
             url = f"{DOLIBARR_URL}/api/index.php/tasks/{task_id}"
-            params = {"includetimespent": timespent_int}
+            params = {"includetimespent": includetimespent}
 
             response = await client.get(url, headers=get_headers(), params=params, timeout=10)
             response.raise_for_status()
@@ -96,7 +94,7 @@ async def dolibarr_get_task(task_id: str = "", includetimespent: str = "0") -> s
             result = f"✅ Task Retrieved:\n\n{format_task_info(task)}"
 
             # Add time spent information if requested
-            if timespent_int >= 1 and task.get('timespent_total_duration'):
+            if includetimespent >= 1 and task.get('timespent_total_duration'):
                 hours = int(task.get('timespent_total_duration', 0)) / 3600
                 result += f"\n\n⏱️  Time Spent Summary:"
                 result += f"\n   Total duration: {hours:.2f} hours"
@@ -108,7 +106,7 @@ async def dolibarr_get_task(task_id: str = "", includetimespent: str = "0") -> s
                     result += f"\n   Last entry: {task.get('timespent_max_date')}"
 
             # Add detailed time spent lines if requested
-            if timespent_int == 2 and task.get('timespent_lines'):
+            if includetimespent == 2 and task.get('timespent_lines'):
                 result += f"\n\n📊 Time Spent Entries:"
                 for line in task.get('timespent_lines', []):
                     hours = int(line.get('task_duration', 0)) / 3600
@@ -198,12 +196,12 @@ async def dolibarr_create_task(ref: str = "", label: str = "", fk_project: str =
         return f"❌ Error: {str(e)}"
 
 @mcp.tool()
-async def dolibarr_modify_task(task_id: str = "", label: str = "", description: str = "", progress: str = "", planned_workload: str = "") -> str:
+async def dolibarr_modify_task(task_id: int, label: str = "", description: str = "", progress: str = "", planned_workload: str = "") -> str:
     """Update an existing Dolibarr task by ID."""
     logger.info(f"Updating task: {task_id}")
 
-    if not task_id.strip():
-        return "❌ Error: task_id is required"
+    if not task_id or task_id <= 0:
+        return "❌ Error: task_id is required and must be a positive integer"
 
     if not DOLIBARR_URL or not DOLIBARR_API_KEY:
         return "❌ Error: DOLIBARR_URL and DOLIBARR_API_KEY must be configured"
@@ -258,12 +256,12 @@ async def dolibarr_modify_task(task_id: str = "", label: str = "", description: 
         return f"❌ Error: {str(e)}"
 
 @mcp.tool()
-async def dolibarr_task_add_spenttime(task_id: str = "", date: str = "", duration: str = "", user_id: str = "", note: str = "") -> str:
+async def dolibarr_task_add_spenttime(task_id: int, date: str = "", duration: str = "", user_id: str = "", note: str = "") -> str:
     """Add a time spent entry to a Dolibarr task."""
     logger.info(f"Adding time spent to task: {task_id}")
 
-    if not task_id.strip():
-        return "❌ Error: task_id is required"
+    if not task_id or task_id <= 0:
+        return "❌ Error: task_id is required and must be a positive integer"
 
     if not date.strip():
         return "❌ Error: date is required (format: YYYY-MM-DD or YYYYMMDD)"
