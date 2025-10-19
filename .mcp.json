@@ -1,36 +1,21 @@
 {
   "mcpServers": {
-    "dolibarr-projects": {
+    "mcp-dolibarr-gateway": {
       "command": "docker",
       "args": [
         "run",
         "-i",
         "--rm",
-        "--name", "mcp-dolibarr-projects",
-        "-e", "DOLIBARR_URL",
-        "-e", "DOLIBARR_API_KEY",
-        "dolibarr-projects-mcp-server:latest"
-      ],
-      "env": {
-        "DOLIBARR_URL": "${DOLIBARR_URL:-http://localhost/dolibarr}",
-        "DOLIBARR_API_KEY": "${DOLIBARR_API_KEY}"
-      }
-    },
-    "dolibarr-tasks": {
-      "command": "docker",
-      "args": [
-        "run",
-        "-i",
-        "--rm",
-        "--name", "mcp-dolibarr-tasks",
-        "-e", "DOLIBARR_URL",
-        "-e", "DOLIBARR_API_KEY",
-        "dolibarr-tasks-mcp-server:latest"
-      ],
-      "env": {
-        "DOLIBARR_URL": "${DOLIBARR_URL:-http://localhost/dolibarr}",
-        "DOLIBARR_API_KEY": "${DOLIBARR_API_KEY}"
-      }
+        "-v", "/var/run/docker.sock:/var/run/docker.sock",
+        "-v", "${HOME}/.docker/mcp:/mcp",
+        "docker/mcp-gateway",
+        "--catalog=/mcp/catalogs/docker-mcp.yaml",
+        "--catalog=/mcp/catalogs/dolibarr-mcp-servers.yaml",
+        "--config=/mcp/config.yaml",
+        "--registry=/mcp/registry.yaml",
+        "--tools-config=/mcp/tools.yaml",
+        "--transport=stdio"
+      ]
     }
   }
 }

@@ -1,7 +1,7 @@
 
 version: 2
 name: dolibarr-mcp-servers
-displayName: dolibarr-mcp-servers MCP Servers
+displayName: DolibarrMCP Servers
 registry:
   dolibarr_projects:
     description: "Manage Dolibarr projects via MCP - create, read, update, delete projects and tasks"
