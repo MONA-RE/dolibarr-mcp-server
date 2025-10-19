@@ -1,0 +1,7 @@
+registry:
+  obsidian:
+    ref: ""
+  dolibarr_projects:
+    ref: ""
+  dolibarr_tasks:
+    ref: ""

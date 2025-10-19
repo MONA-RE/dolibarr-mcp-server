@@ -1,0 +1,74 @@
+
+version: 2
+name: custom
+displayName: Custom MCP Servers
+registry:
+  dolibarr_projects:
+    description: "Manage Dolibarr projects via MCP - create, read, update, delete projects and tasks"
+    title: "Dolibarr Projects"
+    type: server
+    dateAdded: "2025-10-18T00:00:00Z"
+    image: dolibarr-projects-mcp-server:latest
+    ref: ""
+    readme: ""
+    toolsUrl: ""
+    source: ""
+    upstream: ""
+    icon: ""
+    tools:
+      - name: dolibarr_get_project
+      - name: dolibarr_list_projects
+      - name: dolibarr_create_project
+      - name: dolibarr_update_project
+      - name: dolibarr_delete_project
+      - name: dolibarr_get_project_tasks
+    secrets:
+      - name: DOLIBARR_URL
+        env: DOLIBARR_URL
+        example: https://your-dolibarr.com
+      - name: DOLIBARR_API_KEY
+        env: DOLIBARR_API_KEY
+        example: your_api_key_here
+    metadata:
+      category: integration
+      tags:
+        - dolibarr
+        - project-management
+        - erp
+        - crm
+      license: MIT
+      owner: teddy.morel@mona.re
+  dolibarr_tasks:
+    description: "Manage Dolibarr tasks via MCP - create, read, update tasks and manage time spent"
+    title: "Dolibarr Tasks"
+    type: server
+    dateAdded: "2025-01-19T00:00:00Z"
+    image: dolibarr-tasks-mcp-server:latest
+    ref: ""
+    readme: ""
+    toolsUrl: ""
+    source: ""
+    upstream: ""
+    icon: ""
+    tools:
+      - name: dolibarr_get_task
+      - name: dolibarr_create_task
+      - name: dolibarr_modify_task
+      - name: dolibarr_task_add_spenttime
+    secrets:
+      - name: DOLIBARR_URL
+        env: DOLIBARR_URL
+        example: https://your-dolibarr.com
+      - name: DOLIBARR_API_KEY
+        env: DOLIBARR_API_KEY
+        example: your_api_key_here
+    metadata:
+      category: integration
+      tags:
+        - dolibarr
+        - project-management
+        - tasks
+        - erp
+        - crm
+      license: MIT
+      owner: teddy.morel@mona.re
