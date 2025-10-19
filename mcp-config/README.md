@@ -4,7 +4,7 @@ Ce dossier contient les fichiers de configuration nécessaires pour utiliser les
 
 ## Fichiers inclus
 
-- **`custom.yaml`** - Catalogue MCP définissant les serveurs Dolibarr disponibles
+- **`dolibarr-mcp-servers.yaml`** - Catalogue MCP définissant les serveurs Dolibarr disponibles
 - **`registry.yaml`** - Registre MCP pour enregistrer les serveurs
 - **`install.sh`** - Script d'installation automatique (Linux/macOS)
 

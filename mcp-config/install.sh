@@ -52,11 +52,11 @@ echo ""
 echo -e "${YELLOW}Étape 2/5:${NC} Sauvegarde des fichiers existants..."
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
-if [ -f "$MCP_DIR/catalogs/custom.yaml" ]; then
-    cp "$MCP_DIR/catalogs/custom.yaml" "$MCP_DIR/catalogs/custom.yaml.backup-$TIMESTAMP"
-    echo -e "${GREEN}✓${NC} Sauvegarde de custom.yaml créée"
+if [ -f "$MCP_DIR/catalogs/dolibarr-mcp-servers.yaml" ]; then
+    cp "$MCP_DIR/catalogs/dolibarr-mcp-servers.yaml" "$MCP_DIR/catalogs/dolibarr-mcp-servers.yaml.backup-$TIMESTAMP"
+    echo -e "${GREEN}✓${NC} Sauvegarde de dolibarr-mcp-servers.yaml créée"
 else
-    echo -e "${YELLOW}⚠${NC}  Aucun custom.yaml existant"
+    echo -e "${YELLOW}⚠${NC}  Aucun dolibarr-mcp-servers.yaml existant"
 fi
 
 if [ -f "$MCP_DIR/registry.yaml" ]; then
@@ -69,30 +69,13 @@ echo ""
 
 # Copier les nouveaux fichiers
 echo -e "${YELLOW}Étape 3/5:${NC} Installation des fichiers de configuration..."
-cp custom.yaml "$MCP_DIR/catalogs/custom.yaml"
-echo -e "${GREEN}✓${NC} custom.yaml installé"
+cp dolibarr-mcp-servers.yaml "$MCP_DIR/catalogs/dolibarr-mcp-servers.yaml"
+echo -e "${GREEN}✓${NC} dolibarr-mcp-servers.yaml installé"
 
 cp registry.yaml "$MCP_DIR/registry.yaml"
 echo -e "${GREEN}✓${NC} registry.yaml installé"
 echo ""
 
-# Vérifier la configuration Claude Desktop
-echo -e "${YELLOW}Étape 4/5:${NC} Vérification de la configuration Claude Desktop..."
-if [ -f "$CLAUDE_CONFIG" ]; then
-    if grep -q "custom.yaml" "$CLAUDE_CONFIG"; then
-        echo -e "${GREEN}✓${NC} Configuration Claude Desktop OK"
-    else
-        echo -e "${RED}⚠${NC}  ATTENTION: custom.yaml n'est pas référencé dans la configuration Claude Desktop"
-        echo ""
-        echo "Veuillez ajouter cette ligne dans la section 'args' de $CLAUDE_CONFIG :"
-        echo '  "--catalog=/mcp/catalogs/custom.yaml",'
-        echo ""
-    fi
-else
-    echo -e "${YELLOW}⚠${NC}  Fichier de configuration Claude Desktop non trouvé"
-    echo "   Emplacement attendu: $CLAUDE_CONFIG"
-    echo ""
-fi
 
 # Vérifier Docker et les images
 echo -e "${YELLOW}Étape 5/5:${NC} Vérification de Docker..."
@@ -137,7 +120,7 @@ echo ""
 echo "3. Vérifiez les serveurs MCP:"
 echo "   docker mcp server list"
 echo ""
-echo "4. Redémarrez Claude Desktop pour activer les nouveaux outils"
+echo "4. Redémarrez Claude code pour activer les nouveaux outils"
 echo ""
-echo -e "${GREEN}Les outils Dolibarr seront alors disponibles dans Claude Desktop!${NC}"
+echo -e "${GREEN}Les outils Dolibarr seront alors disponibles dans Claude code!${NC}"
 echo ""
