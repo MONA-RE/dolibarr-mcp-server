@@ -286,14 +286,13 @@ async def dolibarr_get_project_tasks(project_id: int, includetimespent: int = 0)
         return "❌ Error: DOLIBARR_URL and DOLIBARR_API_KEY must be configured"
 
     try:
-        timespent_int = int(includetimespent) if includetimespent.strip() else 0
-
-        if timespent_int not in [0, 1, 2]:
+        # includetimespent is already an int from the parameter type
+        if includetimespent not in [0, 1, 2]:
             return "❌ Error: includetimespent must be 0, 1, or 2"
 
         async with httpx.AsyncClient() as client:
             url = f"{DOLIBARR_URL}/api/index.php/projects/{project_id}/tasks"
-            params = {"includetimespent": timespent_int}
+            params = {"includetimespent": includetimespent}
 
             response = await client.get(url, headers=get_headers(), params=params, timeout=10)
             response.raise_for_status()
