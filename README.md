@@ -71,7 +71,7 @@ Le projet inclut un fichier `.mcp.json` pour une utilisation directe dans Claude
 
 ```bash
 # 1. Construire les images Docker
-cd mcp-server && docker build -t dolibarr-projects-mcp-server:latest .
+cd mcp-server-projects && docker build -t dolibarr-projects-mcp-server:latest .
 cd ../mcp-server-tasks && docker build -t dolibarr-tasks-mcp-server:latest .
 
 # 2. Configurer les variables d'environnement

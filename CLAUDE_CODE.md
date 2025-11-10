@@ -38,11 +38,11 @@ Ou définir les variables dans votre shell :
 
 ```bash
 # Linux/macOS
-export DOLIBARR_URL="http://172.19.0.1/dev-smta/htdocs"
+export DOLIBARR_URL="https://VOTRE_URL_DOLIBARR"
 export DOLIBARR_API_KEY="votre_cle_api"
 
 # Windows PowerShell
-$env:DOLIBARR_URL="http://172.19.0.1/dev-smta/htdocs"
+$env:DOLIBARR_URL="https://VOTRE_URL_DOLIBARR"
 $env:DOLIBARR_API_KEY="votre_cle_api"
 ```
 
