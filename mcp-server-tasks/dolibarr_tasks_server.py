@@ -44,11 +44,17 @@ def format_task_info(task):
         f"   Project ID: {task.get('fk_project', 'N/A')}",
     ]
 
+    if task.get('fk_task_parent'):
+        lines.append(f"   Parent task ID: {task.get('fk_task_parent')}")
+
     if task.get('description'):
         lines.append(f"   Description: {task.get('description')}")
 
     if task.get('progress') is not None:
         lines.append(f"   Progress: {task.get('progress')}%")
+
+    if task.get('priority') is not None:
+        lines.append(f"   Priority: {task.get('priority')}")
 
     if task.get('planned_workload'):
         hours = int(task.get('planned_workload')) / 3600
@@ -58,11 +64,20 @@ def format_task_info(task):
         hours = int(task.get('duration_effective')) / 3600
         lines.append(f"   Effective duration: {hours:.2f} hours")
 
+    if task.get('budget_amount'):
+        lines.append(f"   Budget: {task.get('budget_amount')}")
+
     if task.get('date_start'):
         lines.append(f"   Start date: {task.get('date_start')}")
 
     if task.get('date_end'):
         lines.append(f"   End date: {task.get('date_end')}")
+
+    if task.get('note_public'):
+        lines.append(f"   Public note: {task.get('note_public')}")
+
+    if task.get('note_private'):
+        lines.append(f"   Private note: {task.get('note_private')}")
 
     return "\n".join(lines)
 
@@ -130,7 +145,7 @@ async def dolibarr_get_task(task_id: int, includetimespent: int = 0) -> str:
         return f"❌ Error: {str(e)}"
 
 @mcp.tool()
-async def dolibarr_create_task(ref: str = "", label: str = "", fk_project: str = "", description: str = "", planned_workload: str = "", progress: str = "") -> str:
+async def dolibarr_create_task(ref: str = "", label: str = "", fk_project: str = "", description: str = "", fk_task_parent: str = "", date_start: str = "", date_end: str = "", planned_workload: str = "", progress: str = "", priority: str = "", budget_amount: str = "", note_public: str = "", note_private: str = "") -> str:
     """Create a new Dolibarr task with required ref, label, and project ID."""
     logger.info(f"Creating task: {ref} - {label}")
 
@@ -156,6 +171,24 @@ async def dolibarr_create_task(ref: str = "", label: str = "", fk_project: str =
         if description.strip():
             task_data["description"] = description.strip()
 
+        if fk_task_parent.strip():
+            try:
+                task_data["fk_task_parent"] = int(fk_task_parent)
+            except ValueError:
+                return f"❌ Error: fk_task_parent must be a valid integer, got: {fk_task_parent}"
+
+        if date_start.strip():
+            try:
+                task_data["date_start"] = int(date_start)
+            except ValueError:
+                return f"❌ Error: date_start must be a valid Unix timestamp (integer), got: {date_start}"
+
+        if date_end.strip():
+            try:
+                task_data["date_end"] = int(date_end)
+            except ValueError:
+                return f"❌ Error: date_end must be a valid Unix timestamp (integer), got: {date_end}"
+
         if planned_workload.strip():
             try:
                 # Convert hours to seconds
@@ -173,6 +206,24 @@ async def dolibarr_create_task(ref: str = "", label: str = "", fk_project: str =
                     return "❌ Error: progress must be between 0 and 100"
             except ValueError:
                 return f"❌ Error: progress must be a valid integer, got: {progress}"
+
+        if priority.strip():
+            try:
+                task_data["priority"] = int(priority)
+            except ValueError:
+                return f"❌ Error: priority must be a valid integer, got: {priority}"
+
+        if budget_amount.strip():
+            try:
+                task_data["budget_amount"] = float(budget_amount)
+            except ValueError:
+                return f"❌ Error: budget_amount must be a valid number, got: {budget_amount}"
+
+        if note_public.strip():
+            task_data["note_public"] = note_public.strip()
+
+        if note_private.strip():
+            task_data["note_private"] = note_private.strip()
 
         async with httpx.AsyncClient() as client:
             url = f"{DOLIBARR_URL}/api/index.php/tasks"
@@ -196,7 +247,7 @@ async def dolibarr_create_task(ref: str = "", label: str = "", fk_project: str =
         return f"❌ Error: {str(e)}"
 
 @mcp.tool()
-async def dolibarr_modify_task(task_id: int, label: str = "", description: str = "", progress: str = "", planned_workload: str = "") -> str:
+async def dolibarr_modify_task(task_id: int, label: str = "", description: str = "", progress: str = "", planned_workload: str = "", priority: str = "", budget_amount: str = "", date_start: str = "", date_end: str = "", note_public: str = "", note_private: str = "") -> str:
     """Update an existing Dolibarr task by ID."""
     logger.info(f"Updating task: {task_id}")
 
@@ -232,8 +283,38 @@ async def dolibarr_modify_task(task_id: int, label: str = "", description: str =
         except ValueError:
             return f"❌ Error: planned_workload must be a valid number (hours), got: {planned_workload}"
 
+    if priority.strip():
+        try:
+            update_data["priority"] = int(priority)
+        except ValueError:
+            return f"❌ Error: priority must be a valid integer, got: {priority}"
+
+    if budget_amount.strip():
+        try:
+            update_data["budget_amount"] = float(budget_amount)
+        except ValueError:
+            return f"❌ Error: budget_amount must be a valid number, got: {budget_amount}"
+
+    if date_start.strip():
+        try:
+            update_data["date_start"] = int(date_start)
+        except ValueError:
+            return f"❌ Error: date_start must be a valid Unix timestamp (integer), got: {date_start}"
+
+    if date_end.strip():
+        try:
+            update_data["date_end"] = int(date_end)
+        except ValueError:
+            return f"❌ Error: date_end must be a valid Unix timestamp (integer), got: {date_end}"
+
+    if note_public.strip():
+        update_data["note_public"] = note_public.strip()
+
+    if note_private.strip():
+        update_data["note_private"] = note_private.strip()
+
     if not update_data:
-        return "❌ Error: At least one field to update must be provided (label, description, progress, or planned_workload)"
+        return "❌ Error: At least one field to update must be provided"
 
     try:
         async with httpx.AsyncClient() as client:
