@@ -9,7 +9,6 @@
         "-v", "/var/run/docker.sock:/var/run/docker.sock",
         "-v", "${HOME}/.docker/mcp:/mcp",
         "docker/mcp-gateway",
-        "--catalog=/mcp/catalogs/docker-mcp.yaml",
         "--catalog=/mcp/catalogs/dolibarr-mcp-servers.yaml",
         "--config=/mcp/config.yaml",
         "--registry=/mcp/registry.yaml",

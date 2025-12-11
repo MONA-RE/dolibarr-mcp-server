@@ -1,0 +1,38 @@
+services:
+  dolibarr-projects:
+    build:
+      context: ../mcp-server-projects
+      dockerfile: Dockerfile
+    image: dolibarr-projects-mcp-server:latest
+    profiles:
+      - build-only
+
+  dolibarr-tasks:
+    build:
+      context: ../mcp-server-tasks
+      dockerfile: Dockerfile
+    image: dolibarr-tasks-mcp-server:latest
+    profiles:
+      - build-only
+
+  gateway:
+    image: docker/mcp-gateway
+    container_name: mcp_dolibarr
+    pull_policy: always
+    command:
+      - --catalog=/mcp/catalog.yaml
+      - --servers=dolibarr_projects,dolibarr_tasks
+      - --secrets=docker-desktop:/run/secrets/mcp_secret
+      - --transport=sse
+      - --port=8811
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ../mcp-config/dolibarr-mcp-servers.yaml:/mcp/catalog.yaml
+    ports:
+      - "8811:8811"
+    secrets:
+      - mcp_secret
+
+secrets:
+  mcp_secret:
+    file: .env
