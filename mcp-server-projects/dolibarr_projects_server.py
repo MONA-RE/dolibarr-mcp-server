@@ -35,13 +35,29 @@ def get_headers():
         "Accept": "application/json"
     }
 
+def get_project_status(fk_statut):
+    """Convert project status code to human-readable label."""
+    status_map = {
+        0: "Brouillon",
+        1: "Validé",
+        2: "Fermé",
+        "0": "Brouillon",
+        "1": "Validé",
+        "2": "Fermé",
+    }
+    return status_map.get(fk_statut, f"Inconnu ({fk_statut})")
+
 def format_project_info(project):
     """Format project data for display."""
+    # Get status with proper mapping (API returns 'status' or 'statut', not 'fk_statut')
+    status_value = project.get('status') or project.get('statut') or project.get('fk_statut')
+    status_label = get_project_status(status_value) if status_value is not None else 'N/A'
+
     lines = [
         f"📊 Project: {project.get('title', 'N/A')}",
         f"   ID: {project.get('id', 'N/A')}",
         f"   Reference: {project.get('ref', 'N/A')}",
-        f"   Status: {project.get('fk_statut', 'N/A')}",
+        f"   Status: {status_label}",
     ]
 
     if project.get('description'):
@@ -131,7 +147,12 @@ async def dolibarr_list_projects(limit: str = "100", page: str = "0", sortfield:
             for project in projects:
                 project_id = project.get('id', 'N/A')
                 project_url = f"{DOLIBARR_URL}/projet/card.php?id={project_id}" if DOLIBARR_URL and project_id != 'N/A' else "N/A"
-                result_lines.append(f"• {project.get('ref', 'N/A')} - {project.get('title', 'N/A')} (ID: {project_id}) - URL: {project_url}")
+
+                # Get status with proper mapping (API returns 'status' or 'statut', not 'fk_statut')
+                status_value = project.get('status') or project.get('statut') or project.get('fk_statut')
+                status_label = get_project_status(status_value) if status_value is not None else 'N/A'
+
+                result_lines.append(f"• {project.get('ref', 'N/A')} - {project.get('title', 'N/A')} (ID: {project_id}) - Status: {status_label} - URL: {project_url}")
 
             return "\n".join(result_lines)
 
