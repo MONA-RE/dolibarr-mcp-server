@@ -34,3 +34,6 @@ Thumbs.db
 
 # Prompts de développement
 prompt/
+
+# Fichiers de test
+test/

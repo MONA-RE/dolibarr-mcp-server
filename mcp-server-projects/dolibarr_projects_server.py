@@ -59,6 +59,11 @@ def format_project_info(project):
     if project.get('date_end'):
         lines.append(f"   End Date: {project.get('date_end')}")
 
+    # Add URL to project
+    project_id = project.get('id', 'N/A')
+    if DOLIBARR_URL and project_id != 'N/A':
+        lines.append(f"   URL: {DOLIBARR_URL}/projet/card.php?id={project_id}")
+
     return "\n".join(lines)
 
 # === MCP TOOLS ===
@@ -124,7 +129,9 @@ async def dolibarr_list_projects(limit: str = "100", page: str = "0", sortfield:
 
             result_lines = [f"✅ Found {len(projects)} project(s):\n"]
             for project in projects:
-                result_lines.append(f"• {project.get('ref', 'N/A')} - {project.get('title', 'N/A')} (ID: {project.get('id', 'N/A')})")
+                project_id = project.get('id', 'N/A')
+                project_url = f"{DOLIBARR_URL}/projet/card.php?id={project_id}" if DOLIBARR_URL and project_id != 'N/A' else "N/A"
+                result_lines.append(f"• {project.get('ref', 'N/A')} - {project.get('title', 'N/A')} (ID: {project_id}) - URL: {project_url}")
 
             return "\n".join(result_lines)
 
@@ -182,7 +189,10 @@ async def dolibarr_create_project(ref: str = "", title: str = "", description: s
             response.raise_for_status()
             project_id = response.json()
 
-            return f"✅ Project Created Successfully!\n\n   Project ID: {project_id}\n   Reference: {ref}\n   Title: {title}"
+            # Build URL to the created project
+            project_url = f"{DOLIBARR_URL}/projet/card.php?id={project_id}" if DOLIBARR_URL else "N/A"
+
+            return f"✅ Project Created Successfully!\n\n   Project ID: {project_id}\n   Reference: {ref}\n   Title: {title}\n   URL: {project_url}"
 
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 401:
@@ -303,9 +313,12 @@ async def dolibarr_get_project_tasks(project_id: int, includetimespent: int = 0)
 
             result_lines = [f"✅ Found {len(tasks)} task(s) for project {project_id}:\n"]
             for task in tasks:
-                task_line = f"• {task.get('ref', 'N/A')} - {task.get('label', 'N/A')} (ID: {task.get('id', 'N/A')})"
+                task_id = task.get('id', 'N/A')
+                task_url = f"{DOLIBARR_URL}/projet/tasks/task.php?id={task_id}" if DOLIBARR_URL and task_id != 'N/A' else "N/A"
+                task_line = f"• {task.get('ref', 'N/A')} - {task.get('label', 'N/A')} (ID: {task_id})"
                 if task.get('progress'):
                     task_line += f" - Progress: {task.get('progress')}%"
+                task_line += f" - URL: {task_url}"
                 result_lines.append(task_line)
 
             return "\n".join(result_lines)
