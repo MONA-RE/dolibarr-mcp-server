@@ -47,6 +47,21 @@ def get_project_status(fk_statut):
     }
     return status_map.get(fk_statut, f"Inconnu ({fk_statut})")
 
+def format_date(timestamp):
+    """Convert Unix timestamp to dd/MM/YYYY format."""
+    if not timestamp:
+        return None
+    try:
+        # Convert to int if it's a string
+        ts = int(timestamp) if isinstance(timestamp, str) else timestamp
+        # Convert Unix timestamp to datetime
+        dt = datetime.fromtimestamp(ts, tz=timezone.utc)
+        # Format as dd/MM/YYYY
+        return dt.strftime("%d/%m/%Y")
+    except (ValueError, TypeError, OSError):
+        # Return original value if conversion fails
+        return str(timestamp)
+
 def format_project_info(project):
     """Format project data for display."""
     # Get status with proper mapping (API returns 'status' or 'statut', not 'fk_statut')
@@ -70,10 +85,14 @@ def format_project_info(project):
         lines.append(f"   Budget: {project.get('budget_amount')}")
 
     if project.get('date_start'):
-        lines.append(f"   Start Date: {project.get('date_start')}")
+        formatted_date = format_date(project.get('date_start'))
+        if formatted_date:
+            lines.append(f"   Start Date: {formatted_date}")
 
     if project.get('date_end'):
-        lines.append(f"   End Date: {project.get('date_end')}")
+        formatted_date = format_date(project.get('date_end'))
+        if formatted_date:
+            lines.append(f"   End Date: {formatted_date}")
 
     # Add URL to project
     project_id = project.get('id', 'N/A')
