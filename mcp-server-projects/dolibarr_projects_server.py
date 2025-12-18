@@ -136,6 +136,48 @@ async def dolibarr_get_project(project_id: int) -> str:
         return f"❌ Error: {str(e)}"
 
 @mcp.tool()
+async def dolibarr_get_project_by_ref(ref: str = "") -> str:
+    """Get a Dolibarr project by its reference code."""
+    logger.info(f"Fetching project with reference: {ref}")
+
+    if not ref.strip():
+        return "❌ Error: ref (project reference) is required"
+
+    if not DOLIBARR_URL or not DOLIBARR_API_KEY:
+        return "❌ Error: DOLIBARR_URL and DOLIBARR_API_KEY must be configured"
+
+    try:
+        # Build SQL filter to search by reference
+        sql_filter = f"(t.ref:=:'{ref.strip()}')"
+
+        async with httpx.AsyncClient() as client:
+            url = f"{DOLIBARR_URL}/api/index.php/projects"
+            params = {"sqlfilters": sql_filter}
+            response = await client.get(url, headers=get_headers(), params=params, timeout=10)
+            response.raise_for_status()
+            projects = response.json()
+
+            # Check if a project was found
+            if not projects or len(projects) == 0:
+                return f"❌ Error: Project with reference '{ref}' not found"
+
+            # Get first project (reference is unique)
+            project = projects[0]
+
+            return f"✅ Project Retrieved:\n\n{format_project_info(project)}"
+
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 404:
+            return f"❌ Error: Project with reference '{ref}' not found"
+        elif e.response.status_code == 401:
+            return "❌ Error: Authentication failed or insufficient permissions"
+        else:
+            return f"❌ API Error: {e.response.status_code} - {e.response.text}"
+    except Exception as e:
+        logger.error(f"Error fetching project by reference: {e}")
+        return f"❌ Error: {str(e)}"
+
+@mcp.tool()
 async def dolibarr_list_projects(limit: str = "100", page: str = "0", sortfield: str = "t.rowid", sortorder: str = "ASC") -> str:
     """List Dolibarr projects with optional pagination and sorting."""
     logger.info(f"Listing projects: limit={limit}, page={page}")
@@ -187,6 +229,75 @@ async def dolibarr_list_projects(limit: str = "100", page: str = "0", sortfield:
             return f"❌ API Error: {e.response.status_code} - {e.response.text}"
     except Exception as e:
         logger.error(f"Error listing projects: {e}")
+        return f"❌ Error: {str(e)}"
+
+@mcp.tool()
+async def dolibarr_list_all_projects(sortfield: str = "t.rowid", sortorder: str = "ASC") -> str:
+    """List ALL Dolibarr projects with automatic pagination."""
+    logger.info(f"Listing all projects with automatic pagination")
+
+    if not DOLIBARR_URL or not DOLIBARR_API_KEY:
+        return "❌ Error: DOLIBARR_URL and DOLIBARR_API_KEY must be configured"
+
+    all_projects = []
+    page = 0
+    limit = 100
+
+    try:
+        async with httpx.AsyncClient() as client:
+            while True:
+                # Fetch one page
+                url = f"{DOLIBARR_URL}/api/index.php/projects"
+                params = {
+                    "sortfield": sortfield if sortfield.strip() else "t.rowid",
+                    "sortorder": sortorder if sortorder.strip() else "ASC",
+                    "limit": limit,
+                    "page": page
+                }
+
+                response = await client.get(url, headers=get_headers(), params=params, timeout=30)
+                response.raise_for_status()
+                projects = response.json()
+
+                # If no projects, stop
+                if not projects or len(projects) == 0:
+                    break
+
+                # Add projects to complete list
+                all_projects.extend(projects)
+
+                # If less than limit projects, it's the last page
+                if len(projects) < limit:
+                    break
+
+                # Move to next page
+                page += 1
+
+        # Check if we found any projects
+        if not all_projects:
+            return "📊 No projects found"
+
+        # Format output
+        result_lines = [f"✅ Found {len(all_projects)} project(s) (all pages):\n"]
+        for project in all_projects:
+            project_id = project.get('id', 'N/A')
+            project_url = f"{DOLIBARR_URL}/projet/card.php?id={project_id}" if DOLIBARR_URL and project_id != 'N/A' else "N/A"
+
+            # Get status with proper mapping
+            status_value = project.get('status') or project.get('statut') or project.get('fk_statut')
+            status_label = get_project_status(status_value) if status_value is not None else 'N/A'
+
+            result_lines.append(f"• {project.get('ref', 'N/A')} - {project.get('title', 'N/A')} (ID: {project_id}) - Status: {status_label} - URL: {project_url}")
+
+        return "\n".join(result_lines)
+
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 401:
+            return "❌ Error: Authentication failed or insufficient permissions"
+        else:
+            return f"❌ API Error: {e.response.status_code} - {e.response.text}"
+    except Exception as e:
+        logger.error(f"Error listing all projects: {e}")
         return f"❌ Error: {str(e)}"
 
 @mcp.tool()
@@ -295,8 +406,8 @@ async def dolibarr_update_project(project_id: int, title: str = "", description:
         return f"❌ Error: {str(e)}"
 
 @mcp.tool()
-async def dolibarr_delete_project(project_id: int) -> str:
-    """Delete a Dolibarr project by ID."""
+async def dolibarr_delete_project(project_id: int, confirm: str = "") -> str:
+    """Delete a Dolibarr project by ID (requires confirm='yes' for safety)."""
     logger.info(f"Deleting project: {project_id}")
 
     if not project_id or project_id <= 0:
@@ -304,6 +415,14 @@ async def dolibarr_delete_project(project_id: int) -> str:
 
     if not DOLIBARR_URL or not DOLIBARR_API_KEY:
         return "❌ Error: DOLIBARR_URL and DOLIBARR_API_KEY must be configured"
+
+    # Check confirmation
+    if confirm.lower() != "yes":
+        return (
+            f"⚠️ Warning: This will permanently delete project {project_id}.\n"
+            f"This action is irreversible and will remove all project data.\n\n"
+            f"To confirm deletion, call this tool again with: confirm='yes'"
+        )
 
     try:
         async with httpx.AsyncClient() as client:
