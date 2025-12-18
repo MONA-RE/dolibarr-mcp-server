@@ -78,8 +78,9 @@ def format_project_info(project):
     if project.get('description'):
         lines.append(f"   Description: {project.get('description')}")
 
-    if project.get('fk_soc'):
-        lines.append(f"   Third Party ID: {project.get('fk_soc')}")
+    third_party_id = project.get('socid') or project.get('fk_soc')
+    if third_party_id:
+        lines.append(f"   Third Party ID: {third_party_id}")
 
     if project.get('budget_amount'):
         lines.append(f"   Budget: {project.get('budget_amount')}")
@@ -213,7 +214,7 @@ async def dolibarr_create_project(ref: str = "", title: str = "", description: s
 
         if fk_soc.strip():
             try:
-                project_data["fk_soc"] = int(fk_soc)
+                project_data["socid"] = int(fk_soc)
             except ValueError:
                 return f"❌ Error: fk_soc must be a valid integer, got: {fk_soc}"
 
