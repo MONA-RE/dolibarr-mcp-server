@@ -345,7 +345,7 @@ async def dolibarr_task_add_spenttime(task_id: int, date: str = "", duration: st
         return "❌ Error: task_id is required and must be a positive integer"
 
     if not date.strip():
-        return "❌ Error: date is required (format: YYYY-MM-DD or YYYYMMDD)"
+        return "❌ Error: date is required (format: YYYY-MM-DD HH:MM:SS, YYYY-MM-DD, or YYYYMMDD)"
 
     if not duration.strip():
         return "❌ Error: duration is required (in hours, e.g., '2.5')"
@@ -358,8 +358,17 @@ async def dolibarr_task_add_spenttime(task_id: int, date: str = "", duration: st
         duration_hours = float(duration)
         duration_seconds = int(duration_hours * 3600)
 
+        # Convert date to required format (YYYY-MM-DD HH:MM:SS)
+        date_str = date.strip()
+        if len(date_str) == 10:  # Format: YYYY-MM-DD (no time component)
+            date_str = f"{date_str} 12:00:00"
+        elif len(date_str) == 8:  # Format: YYYYMMDD
+            # Convert YYYYMMDD to YYYY-MM-DD HH:MM:SS
+            date_str = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]} 12:00:00"
+        # If date already has time component (19 chars), use as-is
+
         timespent_data = {
-            "date": date.strip(),
+            "date": date_str,
             "duration": duration_seconds
         }
 
@@ -378,7 +387,7 @@ async def dolibarr_task_add_spenttime(task_id: int, date: str = "", duration: st
             response.raise_for_status()
             result = response.json()
 
-            return f"✅ Time Spent Added Successfully!\n\n   Task ID: {task_id}\n   Date: {date}\n   Duration: {duration_hours} hours ({duration_seconds} seconds)\n   Note: {note if note else 'N/A'}"
+            return f"✅ Time Spent Added Successfully!\n\n   Task ID: {task_id}\n   Date: {date_str}\n   Duration: {duration_hours} hours ({duration_seconds} seconds)\n   Note: {note if note else 'N/A'}"
 
     except ValueError as e:
         return f"❌ Error: Invalid number format - {str(e)}"
