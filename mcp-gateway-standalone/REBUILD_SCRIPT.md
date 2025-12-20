@@ -107,10 +107,10 @@ Images MCP disponibles:
 
 ```bash
 # 1. Modifier le code
-vim /home/teddy/docker-workspace/dolibarr-mcp-server/mcp-server-tasks/dolibarr_tasks_server.py
+vim dolibarr-mcp-server/mcp-server-tasks/dolibarr_tasks_server.py
 
 # 2. Rebuild et restart
-cd /home/teddy/docker-workspace/dolibarr-mcp-server/mcp-gateway-standalone
+cd dolibarr-mcp-server/mcp-gateway-standalone
 ./rebuild_and_restart.sh
 
 # 3. Vérifier les logs
@@ -165,7 +165,7 @@ Si le container `mcp_dolibarr` ne démarre pas, le script affichera automatiquem
 docker logs mcp_dolibarr -f
 
 # Arrêter le gateway
-cd /home/teddy/docker-workspace/dolibarr-mcp-server/mcp-gateway-standalone
+cd docker-workspace/dolibarr-mcp-server/mcp-gateway-standalone
 docker compose down
 
 # Voir les containers MCP
