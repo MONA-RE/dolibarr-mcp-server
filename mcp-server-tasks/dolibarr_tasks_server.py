@@ -35,6 +35,79 @@ def get_headers():
         "Accept": "application/json"
     }
 
+def convert_iso_date_to_timestamp(date_str: str) -> int:
+    """
+    Convert ISO 8601 date to Unix timestamp.
+
+    Accepts:
+    - Full ISO 8601: YYYY-MM-DDTHH:MM:SS (e.g., "2025-12-22T14:30:00")
+    - Simple date: YYYY-MM-DD (e.g., "2025-12-22") - will be set to midnight (00:00:00)
+
+    Returns: Unix timestamp (integer) for Dolibarr API
+
+    Raises: ValueError if date format is invalid
+    """
+    date_str = date_str.strip()
+
+    # Case 1: Full ISO 8601 format with time (YYYY-MM-DDTHH:MM:SS)
+    if "T" in date_str:
+        # Parse ISO 8601 format
+        try:
+            dt = datetime.fromisoformat(date_str)
+            # Convert to UTC timestamp
+            return int(dt.replace(tzinfo=timezone.utc).timestamp())
+        except ValueError:
+            raise ValueError(f"Invalid ISO 8601 date format. Expected YYYY-MM-DDTHH:MM:SS, got: {date_str}")
+
+    # Case 2: Simple date format (YYYY-MM-DD) - set to midnight
+    elif len(date_str) == 10 and date_str.count("-") == 2:
+        try:
+            # Add midnight time (00:00:00)
+            dt = datetime.fromisoformat(f"{date_str}T00:00:00")
+            # Convert to UTC timestamp
+            return int(dt.replace(tzinfo=timezone.utc).timestamp())
+        except ValueError:
+            raise ValueError(f"Invalid date format. Expected YYYY-MM-DD, got: {date_str}")
+
+    else:
+        raise ValueError(f"Invalid date format. Expected YYYY-MM-DDTHH:MM:SS or YYYY-MM-DD, got: {date_str}")
+
+def convert_iso_date_to_dolibarr_format(date_str: str) -> str:
+    """
+    Convert ISO 8601 date to Dolibarr format (YYYY-MM-DD HH:MM:SS).
+
+    Accepts:
+    - Full ISO 8601: YYYY-MM-DDTHH:MM:SS (e.g., "2025-12-22T14:30:00")
+    - Simple date: YYYY-MM-DD (e.g., "2025-12-22") - will be set to midnight (00:00:00)
+
+    Returns: Date string in format "YYYY-MM-DD HH:MM:SS" for Dolibarr API
+
+    Raises: ValueError if date format is invalid
+    """
+    date_str = date_str.strip()
+
+    # Case 1: Full ISO 8601 format with time (YYYY-MM-DDTHH:MM:SS)
+    if "T" in date_str:
+        # Parse ISO 8601 format and convert to YYYY-MM-DD HH:MM:SS
+        try:
+            dt = datetime.fromisoformat(date_str)
+            return dt.strftime("%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            raise ValueError(f"Invalid ISO 8601 date format. Expected YYYY-MM-DDTHH:MM:SS, got: {date_str}")
+
+    # Case 2: Simple date format (YYYY-MM-DD) - set to midnight
+    elif len(date_str) == 10 and date_str.count("-") == 2:
+        try:
+            # Validate the date format
+            datetime.fromisoformat(date_str)
+            # Return with midnight time (00:00:00)
+            return f"{date_str} 00:00:00"
+        except ValueError:
+            raise ValueError(f"Invalid date format. Expected YYYY-MM-DD, got: {date_str}")
+
+    else:
+        raise ValueError(f"Invalid date format. Expected YYYY-MM-DDTHH:MM:SS or YYYY-MM-DD, got: {date_str}")
+
 def format_task_info(task):
     """Format task data for display."""
     lines = [
@@ -146,7 +219,7 @@ async def dolibarr_get_task(task_id: int, includetimespent: int = 0) -> str:
 
 @mcp.tool()
 async def dolibarr_create_task(ref: str = "", label: str = "", fk_project: str = "", description: str = "", fk_task_parent: str = "", date_start: str = "", date_end: str = "", planned_workload: str = "", progress: str = "", priority: str = "", budget_amount: str = "", note_public: str = "", note_private: str = "") -> str:
-    """Create a new Dolibarr task with required ref, label, and project ID."""
+    """Create a new Dolibarr task - planned_workload in SECONDS, date_start/date_end in ISO 8601 format (YYYY-MM-DDTHH:MM:SS or YYYY-MM-DD)."""
     logger.info(f"Creating task: {ref} - {label}")
 
     if not ref.strip():
@@ -177,25 +250,32 @@ async def dolibarr_create_task(ref: str = "", label: str = "", fk_project: str =
             except ValueError:
                 return f"❌ Error: fk_task_parent must be a valid integer, got: {fk_task_parent}"
 
+        # Date format: ISO 8601 (YYYY-MM-DDTHH:MM:SS) or simple date (YYYY-MM-DD)
         if date_start.strip():
             try:
-                task_data["date_start"] = int(date_start)
-            except ValueError:
-                return f"❌ Error: date_start must be a valid Unix timestamp (integer), got: {date_start}"
+                task_data["date_start"] = convert_iso_date_to_timestamp(date_start)
+            except ValueError as e:
+                return f"❌ Error: date_start - {str(e)}"
 
         if date_end.strip():
             try:
-                task_data["date_end"] = int(date_end)
-            except ValueError:
-                return f"❌ Error: date_end must be a valid Unix timestamp (integer), got: {date_end}"
+                task_data["date_end"] = convert_iso_date_to_timestamp(date_end)
+            except ValueError as e:
+                return f"❌ Error: date_end - {str(e)}"
 
         if planned_workload.strip():
             try:
-                # Convert hours to seconds
-                hours = float(planned_workload)
-                task_data["planned_workload"] = int(hours * 3600)
+                # planned_workload must be in SECONDS (not hours)
+                seconds = int(float(planned_workload))
+
+                # Validation: warn if value seems too small (likely hours instead of seconds)
+                if seconds > 0 and seconds < 3600:
+                    logger.warning(f"planned_workload={seconds}s is less than 1 hour - did you mean to send seconds?")
+                    return f"❌ Error: planned_workload must be in SECONDS, not hours. Got {seconds} which is only {seconds/60:.1f} minutes. For 20 hours, send '72000' (20*3600). For 1 hour, send '3600'."
+
+                task_data["planned_workload"] = seconds
             except ValueError:
-                return f"❌ Error: planned_workload must be a valid number (hours), got: {planned_workload}"
+                return f"❌ Error: planned_workload must be a valid number in SECONDS (e.g., '72000' for 20 hours), got: {planned_workload}"
 
         if progress.strip():
             try:
@@ -248,7 +328,7 @@ async def dolibarr_create_task(ref: str = "", label: str = "", fk_project: str =
 
 @mcp.tool()
 async def dolibarr_modify_task(task_id: int, label: str = "", description: str = "", progress: str = "", planned_workload: str = "", priority: str = "", budget_amount: str = "", date_start: str = "", date_end: str = "", note_public: str = "", note_private: str = "") -> str:
-    """Update an existing Dolibarr task by ID."""
+    """Update an existing Dolibarr task - planned_workload in SECONDS, date_start/date_end in ISO 8601 format (YYYY-MM-DDTHH:MM:SS or YYYY-MM-DD)."""
     logger.info(f"Updating task: {task_id}")
 
     if not task_id or task_id <= 0:
@@ -277,11 +357,17 @@ async def dolibarr_modify_task(task_id: int, label: str = "", description: str =
 
     if planned_workload.strip():
         try:
-            # Convert hours to seconds
-            hours = float(planned_workload)
-            update_data["planned_workload"] = int(hours * 3600)
+            # planned_workload must be in SECONDS (not hours)
+            seconds = int(float(planned_workload))
+
+            # Validation: warn if value seems too small (likely hours instead of seconds)
+            if seconds > 0 and seconds < 3600:
+                logger.warning(f"planned_workload={seconds}s is less than 1 hour - did you mean to send seconds?")
+                return f"❌ Error: planned_workload must be in SECONDS, not hours. Got {seconds} which is only {seconds/60:.1f} minutes. For 20 hours, send '72000' (20*3600). For 1 hour, send '3600'."
+
+            update_data["planned_workload"] = seconds
         except ValueError:
-            return f"❌ Error: planned_workload must be a valid number (hours), got: {planned_workload}"
+            return f"❌ Error: planned_workload must be a valid number in SECONDS (e.g., '72000' for 20 hours), got: {planned_workload}"
 
     if priority.strip():
         try:
@@ -295,17 +381,18 @@ async def dolibarr_modify_task(task_id: int, label: str = "", description: str =
         except ValueError:
             return f"❌ Error: budget_amount must be a valid number, got: {budget_amount}"
 
+    # Date format: ISO 8601 (YYYY-MM-DDTHH:MM:SS) or simple date (YYYY-MM-DD)
     if date_start.strip():
         try:
-            update_data["date_start"] = int(date_start)
-        except ValueError:
-            return f"❌ Error: date_start must be a valid Unix timestamp (integer), got: {date_start}"
+            update_data["date_start"] = convert_iso_date_to_timestamp(date_start)
+        except ValueError as e:
+            return f"❌ Error: date_start - {str(e)}"
 
     if date_end.strip():
         try:
-            update_data["date_end"] = int(date_end)
-        except ValueError:
-            return f"❌ Error: date_end must be a valid Unix timestamp (integer), got: {date_end}"
+            update_data["date_end"] = convert_iso_date_to_timestamp(date_end)
+        except ValueError as e:
+            return f"❌ Error: date_end - {str(e)}"
 
     if note_public.strip():
         update_data["note_public"] = note_public.strip()
@@ -338,34 +425,32 @@ async def dolibarr_modify_task(task_id: int, label: str = "", description: str =
 
 @mcp.tool()
 async def dolibarr_task_add_spenttime(task_id: int, date: str = "", duration: str = "", user_id: str = "", note: str = "") -> str:
-    """Add a time spent entry to a Dolibarr task."""
+    """Add a time spent entry to a Dolibarr task - date in ISO 8601 format (YYYY-MM-DDTHH:MM:SS or YYYY-MM-DD), duration in seconds."""
     logger.info(f"Adding time spent to task: {task_id}")
 
     if not task_id or task_id <= 0:
         return "❌ Error: task_id is required and must be a positive integer"
 
     if not date.strip():
-        return "❌ Error: date is required (format: YYYY-MM-DD HH:MM:SS, YYYY-MM-DD, or YYYYMMDD)"
+        return "❌ Error: date is required (format: ISO 8601 - YYYY-MM-DDTHH:MM:SS or YYYY-MM-DD)"
 
     if not duration.strip():
-        return "❌ Error: duration is required (in hours, e.g., '2.5')"
+        return "❌ Error: duration is required (in seconds, e.g., '7200' for 2 hours)"
 
     if not DOLIBARR_URL or not DOLIBARR_API_KEY:
         return "❌ Error: DOLIBARR_URL and DOLIBARR_API_KEY must be configured"
 
     try:
-        # Convert duration from hours to seconds
-        duration_hours = float(duration)
-        duration_seconds = int(duration_hours * 3600)
+        # Accept duration in seconds (no conversion needed)
+        duration_seconds = int(float(duration))
+        duration_hours = round(duration_seconds / 3600, 2)
 
-        # Convert date to required format (YYYY-MM-DD HH:MM:SS)
-        date_str = date.strip()
-        if len(date_str) == 10:  # Format: YYYY-MM-DD (no time component)
-            date_str = f"{date_str} 12:00:00"
-        elif len(date_str) == 8:  # Format: YYYYMMDD
-            # Convert YYYYMMDD to YYYY-MM-DD HH:MM:SS
-            date_str = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]} 12:00:00"
-        # If date already has time component (19 chars), use as-is
+        # Convert date to Dolibarr format (YYYY-MM-DD HH:MM:SS)
+        # Accepts ISO 8601: YYYY-MM-DDTHH:MM:SS or simple date: YYYY-MM-DD
+        try:
+            date_str = convert_iso_date_to_dolibarr_format(date)
+        except ValueError as e:
+            return f"❌ Error: date - {str(e)}"
 
         timespent_data = {
             "date": date_str,
@@ -387,7 +472,7 @@ async def dolibarr_task_add_spenttime(task_id: int, date: str = "", duration: st
             response.raise_for_status()
             result = response.json()
 
-            return f"✅ Time Spent Added Successfully!\n\n   Task ID: {task_id}\n   Date: {date_str}\n   Duration: {duration_hours} hours ({duration_seconds} seconds)\n   Note: {note if note else 'N/A'}"
+            return f"✅ Time Spent Added Successfully!\n\n   Task ID: {task_id}\n   Date: {date_str}\n   Duration: {duration_seconds} seconds ({duration_hours} hours)\n   Note: {note if note else 'N/A'}"
 
     except ValueError as e:
         return f"❌ Error: Invalid number format - {str(e)}"
