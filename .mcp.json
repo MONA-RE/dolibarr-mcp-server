@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "dolibarr": {
+      "type": "sse",
+      "url": "http://<MCP_SERVER_HOST>:<MCP_SERVER_PORT>/sse"
+    }
+  }
+}

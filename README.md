@@ -6,13 +6,12 @@ Ce projet vise à créer un serveur MCP (Model Context Protocol) pour Dolibarr, 
 
 ## Architecture
 
-Ce serveur MCP s'appuie sur le module **docker-mcp-gateway** pour fournir une interface standardisée entre les clients MCP et l'API REST de Dolibarr.
+Ce serveur MCP expose les fonctionnalités de Dolibarr via une interface SSE (Server-Sent Events), permettant une intégration directe avec les clients MCP.
 
 ### Composants
 
 - **Dolibarr API**: API REST native de Dolibarr exposant les fonctionnalités de gestion (projets, tâches, tiers, etc.)
-- **docker-mcp-gateway**: Module gateway permettant d'exposer les API via le protocole MCP
-- **MCP Server**: Serveur implémentant le protocole MCP pour Dolibarr
+- **MCP Server**: Serveur implémentant le protocole MCP pour Dolibarr, accessible via SSE
 
 ## Fonctionnalités
 
@@ -40,7 +39,7 @@ L'API Dolibarr utilise une clé API (DOLAPIKEY) pour l'authentification. Cette c
 
 - Docker et Docker Compose
 - Une instance Dolibarr fonctionnelle avec le module API/Web Services activé
-- Module docker-mcp-gateway
+- Un serveur MCP Dolibarr accessible via SSE
 
 ## Installation
 
@@ -67,20 +66,22 @@ Le serveur MCP nécessite les paramètres suivants:
 
 ### Avec Claude Code
 
-Le projet inclut un fichier `.mcp.json` pour une utilisation directe dans Claude Code :
+Le projet inclut un fichier `.mcp.json` pour une utilisation directe dans Claude Code.
 
-```bash
-# 1. Construire les images Docker
-cd mcp-server-projects && docker build -t dolibarr-projects-mcp-server:latest .
-cd ../mcp-server-tasks && docker build -t dolibarr-tasks-mcp-server:latest .
+La configuration utilise le transport SSE :
 
-# 2. Configurer les variables d'environnement
-cp .env.example .env
-# Éditer .env avec vos valeurs
-
-# 3. Ouvrir le projet dans Claude Code
-# Les serveurs MCP seront automatiquement disponibles
+```json
+{
+  "mcpServers": {
+    "dolibarr": {
+      "type": "sse",
+      "url": "http://<MCP_SERVER_HOST>:<MCP_SERVER_PORT>/sse"
+    }
+  }
+}
 ```
+
+Remplacez `<MCP_SERVER_HOST>` et `<MCP_SERVER_PORT>` par les valeurs correspondant à votre déploiement, puis ouvrez le projet dans Claude Code — les outils MCP seront automatiquement disponibles.
 
 Consultez [CLAUDE_CODE.md](./CLAUDE_CODE.md) pour plus de détails.
 
@@ -178,4 +179,4 @@ Ce projet est open source et permet une utilisation commerciale et propriétaire
 
 - [Dolibarr](https://www.dolibarr.org/)
 - [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
-- [docker-mcp-gateway](https://github.com/docker/mcp-gateway)
+- [Model Context Protocol - SSE Transport](https://modelcontextprotocol.io/docs/concepts/transports)
