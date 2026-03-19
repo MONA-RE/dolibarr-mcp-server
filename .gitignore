@@ -33,7 +33,8 @@ Thumbs.db
 *.log
 
 # Prompts de développement
-prompt/
+prompts/
 
 # Fichiers de test
 test/
+test-task/
