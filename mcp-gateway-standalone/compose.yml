@@ -22,7 +22,7 @@ services:
     command:
       - --catalog=/mcp/catalog.yaml
       - --servers=dolibarr_projects,dolibarr_tasks
-      - --secrets=docker-desktop:/run/secrets/mcp_secret
+      - --secrets=/run/secrets/mcp_secret
       - --transport=sse
       - --port=8811
     volumes:
