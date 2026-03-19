@@ -17,7 +17,7 @@ This is a Model Context Protocol (MCP) server for Dolibarr task management. It e
 ### Key Components
 
 1. **dolibarr_tasks_server.py**: Main server implementation
-   - Implements 4 MCP tools for task management
+   - Implements 5 MCP tools for task management
    - Uses async/await for all API calls
    - Follows strict MCP server patterns (no prompts, single-line docstrings)
 
@@ -165,10 +165,15 @@ Located at `~/.docker/mcp/registry.yaml`
 - Validate all required parameters before making API calls
 
 ### Duration Conversion
-- Input: Hours (decimal, e.g., "2.5" = 2h30m)
-- Storage: Seconds (integer, e.g., 9000)
-- Conversion: `seconds = int(hours * 3600)`
-- Display: `hours = seconds / 3600`
+**IMPORTANT CHANGE**: As of 2025-12-21, `planned_workload` now expects **SECONDS**, not hours.
+
+- **Input for planned_workload**: Seconds (integer, e.g., "72000" = 20 hours, "3600" = 1 hour)
+- **Input for duration (time spent)**: Seconds (integer, e.g., "7200" = 2 hours)
+- **Storage**: Seconds (integer)
+- **Conversion**: No conversion needed (direct pass-through)
+- **Display**: `hours = seconds / 3600`
+
+**Consistency**: Both `planned_workload` and `duration` now use the same unit (seconds) throughout the API.
 
 ## Tools Reference
 
@@ -183,6 +188,28 @@ Located at `~/.docker/mcp/registry.yaml`
 
 **Permission**: `projet->lire`
 
+### dolibarr_list_tasks
+**Purpose**: List tasks with pagination and filtering options
+
+**Parameters**:
+- `sortfield` (optional): Field to sort by (default: "t.rowid")
+- `sortorder` (optional): Sort order - "ASC" or "DESC" (default: "ASC")
+- `limit` (optional): Maximum number of tasks to return (default: "100", max: "1000")
+- `page` (optional): Page number for pagination (default: "0")
+- `sqlfilters` (optional): SQL filters in Dolibarr format (e.g., "t.fk_project=123")
+
+**API**: `GET /tasks?sortfield={field}&sortorder={order}&limit={n}&page={p}&sqlfilters={filters}`
+
+**Permission**: `projet->lire`
+
+**Examples**:
+- List first 100 tasks: `dolibarr_list_tasks()`
+- List tasks for project 42: `dolibarr_list_tasks(sqlfilters="t.fk_project=42")`
+- List tasks sorted by reference: `dolibarr_list_tasks(sortfield="t.ref", sortorder="ASC")`
+- Get next page: `dolibarr_list_tasks(page="1")`
+
+**Output**: Returns formatted list with task ID, ref, label, project ID, progress, planned workload, and dates
+
 ### dolibarr_create_task
 **Purpose**: Create a new task in a project
 
@@ -191,12 +218,21 @@ Located at `~/.docker/mcp/registry.yaml`
 - `label` (required): Task name/title
 - `fk_project` (required): Project ID
 - `description` (optional): Task description
-- `planned_workload` (optional): Planned hours (converted to seconds)
+- `planned_workload` (optional): **Planned workload in SECONDS** (e.g., "72000" for 20 hours, "3600" for 1 hour)
 - `progress` (optional): Progress percentage (0-100)
+- `priority` (optional): Priority level (integer)
+- `budget_amount` (optional): Budget amount (decimal)
+- `note_public` (optional): Public note visible to clients
+- `note_private` (optional): Private internal note
+- `date_start` (optional): Start date as Unix timestamp
+- `date_end` (optional): End date as Unix timestamp
+- `fk_task_parent` (optional): Parent task ID for sub-tasks
 
 **API**: `POST /tasks`
 
 **Permission**: `projet->creer`
+
+**Important**: The server now accepts `planned_workload` in **SECONDS**, not hours. This aligns with `dolibarr_task_add_spenttime` which also uses seconds. To convert hours to seconds: `seconds = hours × 3600`.
 
 ### dolibarr_modify_task
 **Purpose**: Update existing task information
@@ -206,7 +242,13 @@ Located at `~/.docker/mcp/registry.yaml`
 - `label` (optional): New task label
 - `description` (optional): New description
 - `progress` (optional): New progress percentage (0-100)
-- `planned_workload` (optional): New planned hours
+- `planned_workload` (optional): **New planned workload in SECONDS** (e.g., "172800" for 48 hours)
+- `priority` (optional): New priority level (integer)
+- `budget_amount` (optional): New budget amount (decimal)
+- `note_public` (optional): New public note
+- `note_private` (optional): New private note
+- `date_start` (optional): New start date as Unix timestamp
+- `date_end` (optional): New end date as Unix timestamp
 
 **API**: `PUT /tasks/{id}`
 
@@ -214,19 +256,23 @@ Located at `~/.docker/mcp/registry.yaml`
 
 **Note**: Does NOT update time spent data
 
+**Important**: Like `dolibarr_create_task`, the `planned_workload` parameter now expects **SECONDS**, not hours.
+
 ### dolibarr_task_add_spenttime
 **Purpose**: Add a time spent entry to a task
 
 **Parameters**:
 - `task_id` (required): Task ID
-- `date` (required): Date (YYYY-MM-DD or YYYYMMDD)
-- `duration` (required): Duration in hours (e.g., "2.5")
+- `date` (required): Date in YYYY-MM-DD HH:MM:SS, YYYY-MM-DD, or YYYYMMDD format (auto-converted to YYYY-MM-DD HH:MM:SS with 12:00:00 if time not provided)
+- `duration` (required): Duration in seconds (e.g., "7200" for 2 hours, "3600" for 1 hour)
 - `user_id` (optional): User ID (defaults to current user)
 - `note` (optional): Work description/notes
 
 **API**: `POST /tasks/{id}/addtimespent`
 
 **Permission**: `projet->creer`
+
+**Note**: The Dolibarr API requires date in YYYY-MM-DD HH:MM:SS format. The MCP server automatically converts YYYY-MM-DD and YYYYMMDD formats by adding 12:00:00 as the time component.
 
 ## Security
 
@@ -240,14 +286,21 @@ Located at `~/.docker/mcp/registry.yaml`
 
 Potential additional tools:
 - dolibarr_delete_task (DELETE /tasks/{id})
-- dolibarr_list_tasks (GET /tasks with filters)
 - dolibarr_get_task_roles (GET /tasks/{id}/roles)
 - dolibarr_validate_task (if validation endpoint exists)
 - dolibarr_list_task_timespent (dedicated time spent listing)
+- dolibarr_list_all_tasks (GET /tasks with automatic pagination to retrieve ALL tasks)
 
 When adding these, follow the same patterns and constraints as existing tools.
 
 ## Time/Duration Helper
+
+**CRITICAL**: The MCP server now accepts **ALL** duration/workload parameters in **SECONDS**:
+- `planned_workload` in `dolibarr_create_task` → SECONDS
+- `planned_workload` in `dolibarr_modify_task` → SECONDS
+- `duration` in `dolibarr_task_add_spenttime` → SECONDS
+
+AI agents (like MONA_IA) MUST convert hours to seconds before calling MCP tools using the helpers below.
 
 ### JavaScript
 ```javascript

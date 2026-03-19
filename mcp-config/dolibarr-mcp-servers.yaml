@@ -52,6 +52,7 @@ registry:
     icon: ""
     tools:
       - name: dolibarr_get_task
+      - name: dolibarr_list_tasks
       - name: dolibarr_create_task
       - name: dolibarr_modify_task
       - name: dolibarr_task_add_spenttime

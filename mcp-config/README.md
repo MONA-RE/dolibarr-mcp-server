@@ -111,7 +111,7 @@ docker mcp server enable dolibarr_projects
 docker mcp server enable dolibarr_tasks
 
 # Vérifier que les serveurs sont actifs
-docker mcp server list
+docker mcp server ls
 ```
 
 #### Étape 6 : Redémarrer Claude Code

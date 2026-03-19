@@ -1,0 +1,26 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "mcp-dolibarr-gateway": {
+      "type": "local",
+      "command": [
+        "docker",
+        "run",
+        "-i",
+        "--rm",
+        "-v", "/var/run/docker.sock:/var/run/docker.sock",
+        "-v", "~/.docker/mcp:/mcp",
+        "docker/mcp-gateway",
+        "--catalog=/mcp/catalogs/dolibarr-mcp-servers.yaml",
+        "--config=/mcp/config.yaml",
+        "--registry=/mcp/registry.yaml",
+        "--tools-config=/mcp/tools.yaml",
+        "--transport=stdio"
+      ],
+      "enabled": true,
+      "environment": {
+        "DOCKER_CONTEXT": "desktop-linux"
+      }
+    }
+  }
+}

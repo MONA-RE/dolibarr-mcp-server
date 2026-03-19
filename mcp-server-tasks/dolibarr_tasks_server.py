@@ -218,6 +218,84 @@ async def dolibarr_get_task(task_id: int, includetimespent: int = 0) -> str:
         return f"❌ Error: {str(e)}"
 
 @mcp.tool()
+async def dolibarr_list_tasks(sortfield: str = "t.rowid", sortorder: str = "ASC", limit: str = "100", page: str = "0", sqlfilters: str = "") -> str:
+    """List Dolibarr tasks with pagination and filtering options."""
+    logger.info(f"Listing tasks with limit={limit}, page={page}, sortfield={sortfield}")
+
+    if not DOLIBARR_URL or not DOLIBARR_API_KEY:
+        return "❌ Error: DOLIBARR_URL and DOLIBARR_API_KEY must be configured"
+
+    try:
+        # Validate and convert parameters
+        limit_int = int(limit) if limit.strip() else 100
+        page_int = int(page) if page.strip() else 0
+
+        if limit_int < 0 or limit_int > 1000:
+            return "❌ Error: limit must be between 0 and 1000"
+
+        if page_int < 0:
+            return "❌ Error: page must be >= 0"
+
+        params = {
+            "sortfield": sortfield if sortfield.strip() else "t.rowid",
+            "sortorder": sortorder if sortorder.strip() else "ASC",
+            "limit": str(limit_int),
+            "page": str(page_int)
+        }
+
+        if sqlfilters.strip():
+            params["sqlfilters"] = sqlfilters.strip()
+
+        async with httpx.AsyncClient() as client:
+            url = f"{DOLIBARR_URL}/api/index.php/tasks"
+            response = await client.get(url, headers=get_headers(), params=params, timeout=30)
+            response.raise_for_status()
+            tasks = response.json()
+
+            if not tasks or len(tasks) == 0:
+                return "ℹ️  No tasks found"
+
+            result = f"✅ Tasks Retrieved: {len(tasks)} task(s)\n"
+            result += f"   Page: {page_int} | Limit: {limit_int} | Sort: {params['sortfield']} {params['sortorder']}\n\n"
+
+            for task in tasks:
+                result += f"📋 {task.get('label', 'N/A')}\n"
+                result += f"   ID: {task.get('id', 'N/A')} | Ref: {task.get('ref', 'N/A')}\n"
+                result += f"   Project ID: {task.get('fk_project', 'N/A')}\n"
+
+                if task.get('progress') is not None:
+                    result += f"   Progress: {task.get('progress')}%\n"
+
+                if task.get('planned_workload'):
+                    hours = int(task.get('planned_workload')) / 3600
+                    result += f"   Planned: {hours:.2f}h\n"
+
+                if task.get('date_start'):
+                    result += f"   Start: {task.get('date_start')}\n"
+
+                if task.get('date_end'):
+                    result += f"   End: {task.get('date_end')}\n"
+
+                result += "\n"
+
+            # Add pagination info
+            if len(tasks) == limit_int:
+                result += f"💡 Tip: There may be more tasks. Use page={page_int + 1} to see the next page.\n"
+
+            return result
+
+    except ValueError as e:
+        return f"❌ Error: Invalid number format - {str(e)}"
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 401:
+            return "❌ Error: Authentication failed or insufficient permissions"
+        else:
+            return f"❌ API Error: {e.response.status_code} - {e.response.text}"
+    except Exception as e:
+        logger.error(f"Error listing tasks: {e}")
+        return f"❌ Error: {str(e)}"
+
+@mcp.tool()
 async def dolibarr_create_task(ref: str = "", label: str = "", fk_project: str = "", description: str = "", fk_task_parent: str = "", date_start: str = "", date_end: str = "", planned_workload: str = "", progress: str = "", priority: str = "", budget_amount: str = "", note_public: str = "", note_private: str = "") -> str:
     """Create a new Dolibarr task - planned_workload in SECONDS, date_start/date_end in ISO 8601 format (YYYY-MM-DDTHH:MM:SS or YYYY-MM-DD)."""
     logger.info(f"Creating task: {ref} - {label}")
